@@ -43,19 +43,29 @@ ebird$CATEGORY = NULL
 
 # Set date field and divide up by year, month, week for plotting
 ebird$Date = as.Date(ebird$OBSERVATION.DATE, "%Y-%m-%d")
-ebird$Year = as.Date(cut(ebird$Date, breaks = "year"))
-ebird$Month = as.Date(cut(ebird$Date, breaks = "month"))
-ebird$Week <- as.Date(cut(ebird$Date, breaks = "week", start.on.monday = FALSE))
+ebird$Year = format(ebird$Date, "%Y")
+ebird$Month = format(ebird$Date, "%m")
+# Remove years < 2005 and months 5,6,7,8
+ebird = subset(ebird, ebird$Year >= "2005")
+ebird = subset(ebird, ebird$Month >= "09" | ebird$Month <= "04")
 
+ebird$Month = ifelse(ebird$Month == "09", "9", ebird$Month)
+ebird$Winter = ifelse(strtoi(ebird$Month) <= 4, paste(strtoi(ebird$Year) - 1,ebird$Year, sep = "/"),paste(ebird$Year, strtoi(ebird$Year) + 1, sep = "/"))
+ebird$Week <- as.Date(cut(ebird$Date, breaks = "week", start.on.monday = FALSE))
+ebird$Month = ifelse(strtoi(ebird$Month) <= 4, substring(ebird$Month,2),ebird$Month)
+
+
+# Reorder months
+ebird$Month = factor(ebird$Month, levels=c("9", "10", "11", "12", "1", "2", "3", "4"))
 #Set X as na
-ebird$OBSERVATION.COUNT[is.na(ebird$OBSERVATION.COUNT)] <- 1
+ebird$OBSERVATION.COUNT = ifelse(ebird$OBSERVATION.COUNT == "X", 1, ebird$OBSERVATION.COUNT)
+ebird$OBSERVATION.COUNT = as.numeric(ebird$OBSERVATION.COUNT)
+
+aggCount = aggregate(ebird$OBSERVATION.COUNT, list(Month=ebird$Month, Winter=ebird$Winter), sum)
+# Graph one winter
+ggplot(data=aggCount, aes(x=Month, y=x, group=Winter, color=Winter)) +
+  geom_line()
 
 # Graph by month
-ggplot(data = ebird,
-       aes(Month, OBSERVATION.COUNT, group=Year)) +
-  geom_line(size=1) +
-  stat_summary(fun.y = sum, # adds up all observations for the month
-               geom = "bar") + # or "line"
-  scale_x_date(
-    labels=date_format("%m"),
-    date_breaks = "1 month") # custom x-axis labels
+ggplot(data=ebird, aes(x=Month, y=OBSERVATION.COUNT, group=Winter, color=Winter)) +
+  geom_line()
