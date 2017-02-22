@@ -1,9 +1,20 @@
 library(ggplot2)
 library(scales)
-# Read in ebird data (16 species)
-ebird <- read.delim("D:/ebird/ebd_US_agwtea1_relNov-2016.txt", sep="\t", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
+############################################################################
+# Setup environment and variables
+############################################################################
+# Variable designiation
+# Workspace directory
+workspace = "D:/ebird"
 species = "AGWT"
-setwd("D:/ebird")
+# Input ArcGIS Model csv file
+inbird = "ebd_US_agwtea1_relNov-2016.txt"
+bcr = "BCR.csv"
+############################################################################
+# Read in ebird data (16 species)
+ebird <- read.delim(paste(workspace,inbird,sep="/"), sep="\t", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
+bcr = read.csv(paste(workspace, bcr, sep="/"), header=TRUE)
+setwd(workspace)
 
 # Drop extra columns and data
 ebird = subset(ebird, ebird$COUNTRY_CODE == "US")
@@ -68,8 +79,19 @@ aggCount = aggregate(ebird$OBSERVATION.COUNT, list(Month=ebird$Month, ebird$BCR.
 # Graph one winter
 plot = ggplot(data=aggCount, aes(x=Month, y=x, group=Winter, color=Winter)) +
   stat_smooth(se=FALSE, na.rm = TRUE) + 
-  ggtitle(paste("Figure 1. Observation count sum mapped over wintering period for ", species, sep="")) +  
+  ggtitle(paste("Figure 1. Observation count sum by BCR plotted over wintering period for ", species, sep="")) +
   facet_wrap(~ Group.2)
 # + scale_y_continuous(labels = comma) # optional code to remove scientific notation
 print(plot)
 ggsave(file=paste(species, "_Pop.jpg",sep=""), plot=plot, width=7, height=4)
+
+
+# Graph mean
+aggMean = aggregate(ebird$OBSERVATION.COUNT, list(Month=ebird$Month, ebird$BCR.CODE), mean)
+plot = ggplot(aggMean, aes(x=Month, y=x)) + geom_point() +
+  ylim(5,500) +
+  ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", species, sep="")) +
+  stat_summary(aes(y = x,group=1), fun.y=mean, colour="red", geom="line",group=1) +
+  facet_wrap(~ Group.2)
+print(plot)
+ggsave(file=paste(species, "_Mean.jpg",sep=""), plot=plot, width=8, height=4)
