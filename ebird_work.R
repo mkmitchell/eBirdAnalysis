@@ -65,33 +65,34 @@ ebird = subset(ebird, ebird$Year > 2005 & ebird$Year <= 2016)
 ebird = subset(ebird, ebird$Month >= 9 | ebird$Month <= 4)
 
 ebird$Winter = ifelse(ebird$Month <= 4, paste(ebird$Year - 1,ebird$Year, sep = "/"),paste(ebird$Year, ebird$Year + 1, sep = "/"))
-ebird$Week <- as.Date(cut(ebird$Date, breaks = "week", start.on.monday = FALSE))
+ebird$Week = as.numeric(format(ebird$Date, "%U"))
 #ebird$Month = ifelse(ebird$Month <= 5, substring(ebird$Month,2),ebird$Month)
 ebird = subset(ebird, ebird$Winter != "2005/2006" & ebird$Winter != "2016/2017")
 
 # Reorder months
 ebird$Month = factor(ebird$Month, levels=c(9, 10, 11, 12, 1, 2, 3, 4))
+ebird$Week = factor(ebird$Week, levels=c(35:53,0:17))
 #Set X as na
 ebird$OBSERVATION.COUNT = ifelse(ebird$OBSERVATION.COUNT == "X", 1, ebird$OBSERVATION.COUNT)
 ebird$OBSERVATION.COUNT = as.numeric(ebird$OBSERVATION.COUNT)
 
-aggCount = aggregate(ebird$OBSERVATION.COUNT, list(Month=ebird$Month, ebird$BCR.CODE, Winter=ebird$Winter), sum)
+aggCount = aggregate(ebird$OBSERVATION.COUNT, list(Week=ebird$Week, BCR=ebird$BCR.CODE, Winter=ebird$Winter), sum)
 # Graph one winter
-plot = ggplot(data=aggCount, aes(x=Month, y=x, group=Winter, color=Winter)) +
+plot = ggplot(data=aggCount, aes(x=Week, y=x, group=Winter, color=Winter)) +
   stat_smooth(se=FALSE, na.rm = TRUE) + 
   ggtitle(paste("Figure 1. Observation count sum by BCR plotted over wintering period for ", species, sep="")) +
-  facet_wrap(~ Group.2)
+  facet_wrap(~ BCR)
 # + scale_y_continuous(labels = comma) # optional code to remove scientific notation
 print(plot)
 ggsave(file=paste(species, "_Pop.jpg",sep=""), plot=plot, width=7, height=4)
 
 
 # Graph mean
-aggMean = aggregate(ebird$OBSERVATION.COUNT, list(Month=ebird$Month, ebird$BCR.CODE), mean)
-plot = ggplot(aggMean, aes(x=Month, y=x)) + geom_point() +
+aggMean = aggregate(ebird$OBSERVATION.COUNT, list(Week=ebird$Week, BCR=ebird$BCR.CODE), mean)
+plot = ggplot(aggMean, aes(x=Week, y=x)) + geom_point() +
   ylim(5,500) +
   ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", species, sep="")) +
   stat_summary(aes(y = x,group=1), fun.y=mean, colour="red", geom="line",group=1) +
-  facet_wrap(~ Group.2)
+  facet_wrap(~ BCR)
 print(plot)
 ggsave(file=paste(species, "_Mean.jpg",sep=""), plot=plot, width=8, height=4)
