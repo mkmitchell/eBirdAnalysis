@@ -15,6 +15,8 @@ bcr = "BCR.csv"
 # Read in ebird data (16 species)
 ebird <- read.delim(paste(workspace,inbird,sep="/"), sep="\t", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
 bcr = read.csv(paste(workspace, bcr, sep="/"), header=TRUE)
+# Join arcData to coverData based on cover_type
+ebird = merge(ebird, bcr, by.x = "BCR.CODE", by.y = "BCR")
 setwd(workspace)
 
 # Drop extra columns and data
@@ -100,9 +102,10 @@ ggsave(file=paste(species, "_Mean.jpg",sep=""), plot=plot, width=8, height=4)
 
 print("P values < 0.05 indicate significant bimodality and values greater than 0.05 but less than 0.10 suggest bimodality with marginal significance")
 for(i in unique(aggMean$BCR)) {
-  testsetup = aggregate(ebird$OBSERVATION.COUNT, list(Week=ebird$Week, BCR=ebird$BCR.CODE), mean)
+  testsetup = aggregate(ebird$OBSERVATION.COUNT, list(Week=ebird$Week, BCR=ebird$BCR.CODE, BCRName = ebird$BCRNAME), mean)
   testsetup = testsetup[which(testsetup$BCR == i),]
   test = dip.test(testsetup$x)
-  print(paste("BCR:", i, "/", "P-value:", test$statistic[[1]], sep=" "))
+  bcr_name = unique(testsetup$BCRName)
+  print(paste("P-value:", test$statistic[[1]]," / BCR:", bcr_name, sep=" "))
 }
 
