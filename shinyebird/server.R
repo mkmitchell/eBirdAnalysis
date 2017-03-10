@@ -101,7 +101,7 @@ shinyServer(function(input, output) {
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
     ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$x)) + geom_point() +
       stat_summary(aes(y = x,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
-      ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", species, sep=""))
+      ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   
   computePVal = reactive({
