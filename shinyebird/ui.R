@@ -10,7 +10,9 @@ shinyUI(fluidPage(
     ),
       
     mainPanel(
-      h3(textOutput("whichSpecies"))
+      h3(textOutput("whichSpecies")),
+      plotOutput(("statsTable")),
+      textOutput(("pVal"))
     )
   )
 ))
