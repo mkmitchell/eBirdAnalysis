@@ -102,7 +102,7 @@ shinyServer(function(input, output) {
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
     ggplot(aggMean, aes(x=aggMean$Week, y=x)) +
       stat_summary(aes(y = x,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
-      labs(x="Mean Observation count", y="Week number from the first week in September until the last week in April") +
+      labs(y="Mean Observation count", x="Week number from the first week in September until the last week in April") +
       ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   computeSmooth = reactive({
@@ -113,7 +113,7 @@ shinyServer(function(input, output) {
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
     ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$smooth)) +
       stat_summary(aes(y = aggMean$smooth,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
-      labs(x="Mean Observation count", y="Week number from the first week in September until the last week in April") +
+      labs(y="Mean Observation count", x="Week number from the first week in September until the last week in April") +
       ggtitle(paste("Figure 2. Smoothed Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   

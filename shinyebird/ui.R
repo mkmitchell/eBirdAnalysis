@@ -15,7 +15,7 @@ shinyUI(fluidPage(
       div(style="display:inline-block","Species Code: "),  
       div(style="display:inline-block; text-transform:uppercase", textOutput("whichSpecies"))),
       plotOutput(("statsTable")),
-      plotOutput(("smoothTable")),
+      plotOutput(("smoothTable")),br(),br(),
       "P values < 0.05 indicate significant bimodality and values greater than 0.05 but less than 0.10 suggest bimodality with marginal significance.",br(),
       strong(textOutput(("pVal")))
       
