@@ -122,7 +122,7 @@ shinyServer(function(input, output) {
     df = subset(df, df$BCRNAME == input$bcr)
     testsetup = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE, BCRName = df$BCRNAME), mean)
     testsmooth = SMA(testsetup[, "x"], 3)
-    test = dip.test(testsmooth$x)
+    test = dip.test(testsmooth)
     bcr_name = unique(testsetup$BCRName)
     paste("P-value:", test$statistic[[1]]," / BCR:", bcr_name, sep=" ")
   })
