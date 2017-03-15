@@ -5,7 +5,7 @@ library(shiny)
 
 
 shinyServer(function(input, output) {
-  workspace = "D:/ebird"
+  workspace = "/data"
   bcr = "BCR.csv"
   
   observeEvent(input$do, {
