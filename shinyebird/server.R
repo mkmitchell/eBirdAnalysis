@@ -2,6 +2,7 @@ library(ggplot2)
 library(scales)
 library(diptest)
 library(shiny)
+library(TTR)
 
 
 shinyServer(function(input, output) {
@@ -98,9 +99,11 @@ shinyServer(function(input, output) {
     df = ebird()
     df = subset(df, df$BCRNAME == input$bcr)
     aggMean = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE), mean)
+    aggMean$smooth = SMA(aggMean[, "x"],3)
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
-    ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$x)) + geom_point() +
-      stat_summary(aes(y = x,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
+    ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$smooth)) +
+      stat_summary(aes(y = aggMean$smooth,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
+      labs(x="Mean Observation count", y="Week number from the first week in September until the last week in April") +
       ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   
@@ -108,7 +111,8 @@ shinyServer(function(input, output) {
     df = ebird()
     df = subset(df, df$BCRNAME == input$bcr)
     testsetup = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE, BCRName = df$BCRNAME), mean)
-    test = dip.test(testsetup$x)
+    testsmooth = SMA(testsetup[, "x"], 3)
+    test = dip.test(testsmooth$x)
     bcr_name = unique(testsetup$BCRName)
     paste("P-value:", test$statistic[[1]]," / BCR:", bcr_name, sep=" ")
   })
