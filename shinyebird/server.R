@@ -82,12 +82,13 @@ shinyServer(function(input, output) {
     #Set X as na
     temp$OBSERVATION.COUNT = ifelse(temp$OBSERVATION.COUNT == "X", 1, temp$OBSERVATION.COUNT)
     temp$OBSERVATION.COUNT = as.numeric(temp$OBSERVATION.COUNT)
+    temp$BCRNUMNAME = paste(temp$BCR.CODE, temp$BCRNAME, sep="_")
     temp
   })
   
   output$selectedSpecies = renderUI({
     df = ebird()
-    items = unique(df$BCRNAME)
+    items = unique(df$BCRNUMNAME)
     selectInput("bcr", "BCR:", items)
     })
   
@@ -97,7 +98,7 @@ shinyServer(function(input, output) {
   
   computeSummary = reactive({
     df = ebird()
-    df = subset(df, df$BCRNAME == input$bcr)
+    df = subset(df, df$BCRNUMNAME == input$bcr)
     aggMean = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE), mean)
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
     ggplot(aggMean, aes(x=aggMean$Week, y=x)) +
@@ -107,7 +108,7 @@ shinyServer(function(input, output) {
   })
   computeSmooth = reactive({
     df = ebird()
-    df = subset(df, df$BCRNAME == input$bcr)
+    df = subset(df, df$BCRNUMNAME == input$bcr)
     aggMean = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE), mean)
     aggMean$smooth = SMA(aggMean[, "x"],3)
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
@@ -119,11 +120,11 @@ shinyServer(function(input, output) {
   
   computePVal = reactive({
     df = ebird()
-    df = subset(df, df$BCRNAME == input$bcr)
-    testsetup = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE, BCRName = df$BCRNAME), mean)
+    df = subset(df, df$BCRNUMNAME == input$bcr)
+    testsetup = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE, BCRNUMNAME = df$BCRNUMNAME), mean)
     testsmooth = SMA(testsetup[, "x"], 3)
     test = dip.test(testsmooth)
-    bcr_name = unique(testsetup$BCRName)
+    bcr_name = unique(testsetup$BCRNUMNAME)
     paste("P-value:", test$statistic[[1]]," / BCR:", bcr_name, sep=" ")
   })
   
