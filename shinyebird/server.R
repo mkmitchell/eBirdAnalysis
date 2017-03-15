@@ -99,12 +99,22 @@ shinyServer(function(input, output) {
     df = ebird()
     df = subset(df, df$BCRNAME == input$bcr)
     aggMean = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE), mean)
+    #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
+    ggplot(aggMean, aes(x=aggMean$Week, y=x)) +
+      stat_summary(aes(y = x,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
+      labs(x="Mean Observation count", y="Week number from the first week in September until the last week in April") +
+      ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
+  })
+  computeSmooth = reactive({
+    df = ebird()
+    df = subset(df, df$BCRNAME == input$bcr)
+    aggMean = aggregate(df$OBSERVATION.COUNT, list(Week=df$Week, BCR=df$BCR.CODE), mean)
     aggMean$smooth = SMA(aggMean[, "x"],3)
     #plot(aggMean$Week, aggMean$OBSERVATION.COUNT)
     ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$smooth)) +
       stat_summary(aes(y = aggMean$smooth,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
       labs(x="Mean Observation count", y="Week number from the first week in September until the last week in April") +
-      ggtitle(paste("Figure 2. Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
+      ggtitle(paste("Figure 2. Smoothed Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   
   computePVal = reactive({
@@ -120,6 +130,10 @@ shinyServer(function(input, output) {
   output$statsTable = renderPlot({
     if(input$do == 0) return(NULL)
     computeSummary()
+  })
+  output$smoothTable = renderPlot({
+    if(input$do == 0) return(NULL)
+    computeSmooth()
   })
   
   output$pVal = renderText({
