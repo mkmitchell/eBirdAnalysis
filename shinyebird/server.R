@@ -89,7 +89,7 @@ shinyServer(function(input, output) {
   output$selectedSpecies = renderUI({
     df = ebird()
     items = unique(df$BCRNUMNAME)
-    selectInput("bcr", "BCR:", items)
+    selectInput("bcr", "BCR:", sort(items))
     })
   
   output$whichSpecies = renderText({
