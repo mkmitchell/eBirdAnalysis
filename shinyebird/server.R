@@ -115,7 +115,7 @@ shinyServer(function(input, output) {
     ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$smooth)) +
       stat_summary(aes(y = aggMean$smooth,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
       labs(y="Mean Observation count", x="Week number from the first week in September until the last week in April") +
-      scale_x_discrete(labels=c("Sept", 36:43, "November", 45:53, "Jan", 2:17), limits=c("Sept", 17)) +
+      scale_x_discrete(labels=c("Sept", 36:43, "November", 45:53, "Jan", 2:17)) +
       ggtitle(paste("Figure 2. Smoothed Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   
