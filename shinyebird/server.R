@@ -14,75 +14,77 @@ shinyServer(function(input, output) {
   })
   
   ebird = reactive({
-    # Input ArcGIS Model csv file
-    infile = input$species
-    inbird = paste(infile,".txt",sep="")
-    print(inbird)
-    ############################################################################
-    # Read in ebird data
-    tempin = read.delim(paste(workspace,inbird,sep="/"), sep="\t", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
-    bcrData = read.csv(paste(workspace, bcr, sep="/"), header=TRUE)
-    temp = merge(tempin, bcrData, by.x = "BCR.CODE", by.y = "BCR")
-    # Drop extra columns and data
-    temp = subset(temp, temp$COUNTRY_CODE == "US")
-    temp = subset(temp, temp$APPROVED == "1")
-    temp$PROJECT.CODE = NULL
-    temp$PROTOCOL.TYPE = NULL
-    temp$SAMPLING.EVENT.IDENTIFIER = NULL
-    temp$FIRST.NAME = NULL
-    temp$LAST.NAME = NULL
-    temp$OBSERVER.ID = NULL
-    temp$BREEDING.BIRD.ATLAS.CODE = NULL
-    temp$GLOBAL.UNIQUE.IDENTIFIER = NULL
-    temp$SUBSPECIES.COMMON.NAME = NULL
-    temp$SUBSPECIES.SCIENTIFIC.NAME = NULL
-    temp$AGE.SEX = NULL
-    temp$COUNTRY = NULL
-    temp$IBA.CODE = NULL
-    temp$SUBNATIONAL1_CODE = NULL
-    temp$SUBNATIONAL2_CODE = NULL
-    temp$ATLAS.BLOCK = NULL
-    temp$LOCALITY = NULL
-    temp$LOCALITY.ID = NULL
-    temp$LOCALITY.TYPE = NULL
-    temp$REVIEWED = NULL
-    temp$REASON = NULL
-    temp$TRIP.COMMENTS = NULL
-    temp$EFFORT.AREA.HA = NULL
-    temp$EFFORT.DISTANCE.KM = NULL
-    temp$SPECIES.COMMENTS = NULL
-    temp$X = NULL
-    temp$APPROVED = NULL
-    temp$TIME.OBSERVATIONS.STARTED = NULL
-    temp$DURATION.MINUTES = NULL
-    temp$NUMBER.OBSERVERS = NULL
-    temp$ALL.SPECIES.REPORTED = NULL
-    temp$GROUP.IDENTIFIER = NULL
-    temp$TAXONOMIC.ORDER = NULL
-    temp$CATEGORY = NULL
-    
-    # Set date field and divide up by year, month, week for plotting
-    temp$Date = as.Date(temp$OBSERVATION.DATE, "%Y-%m-%d")
-    temp$Year = strtoi(format(temp$Date, "%Y"))
-    temp$Month = strtoi(format(temp$Date, "%m"))
-    temp$Day = strtoi(format(temp$Date, "%d"))
-    temp$Month = ifelse(format(temp$Date, "%m") == "09", 9, temp$Month)
-    # Remove years < 2005 and months 6,7,8
-    temp = subset(temp, temp$Year > 2005 & temp$Year <= 2016)
-    temp = subset(temp, temp$Month >= 9 | temp$Month <= 4)
-    
-    temp$Winter = ifelse(temp$Month <= 4, paste(temp$Year - 1,temp$Year, sep = "/"),paste(temp$Year, temp$Year + 1, sep = "/"))
-    temp$Week = as.numeric(format(temp$Date, "%U"))
-    #ebird$Month = ifelse(ebird$Month <= 5, substring(ebird$Month,2),ebird$Month)
-    temp = subset(temp, temp$Winter != "2005/2006" & temp$Winter != "2016/2017")
-    
-    # Reorder months
-    temp$Month = factor(temp$Month, levels=c(9, 10, 11, 12, 1, 2, 3, 4))
-    temp$Week = factor(temp$Week, levels=c(35:53,1:17))
-    #Set X as na
-    temp$OBSERVATION.COUNT = ifelse(temp$OBSERVATION.COUNT == "X", 1, temp$OBSERVATION.COUNT)
-    temp$OBSERVATION.COUNT = as.numeric(temp$OBSERVATION.COUNT)
-    temp$BCRNUMNAME = paste(temp$BCR.CODE, temp$BCRNAME, sep="_")
+    withProgress(message = 'Loading dataset', value = 0, {
+      # Input ArcGIS Model csv file
+      infile = input$species
+      inbird = paste(infile,".txt",sep="")
+      print(inbird)
+      ############################################################################
+      # Read in ebird data
+      tempin = read.delim(paste(workspace,inbird,sep="/"), sep="\t", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
+      bcrData = read.csv(paste(workspace, bcr, sep="/"), header=TRUE)
+      temp = merge(tempin, bcrData, by.x = "BCR.CODE", by.y = "BCR")
+      # Drop extra columns and data
+      temp = subset(temp, temp$COUNTRY_CODE == "US")
+      temp = subset(temp, temp$APPROVED == "1")
+      temp$PROJECT.CODE = NULL
+      temp$PROTOCOL.TYPE = NULL
+      temp$SAMPLING.EVENT.IDENTIFIER = NULL
+      temp$FIRST.NAME = NULL
+      temp$LAST.NAME = NULL
+      temp$OBSERVER.ID = NULL
+      temp$BREEDING.BIRD.ATLAS.CODE = NULL
+      temp$GLOBAL.UNIQUE.IDENTIFIER = NULL
+      temp$SUBSPECIES.COMMON.NAME = NULL
+      temp$SUBSPECIES.SCIENTIFIC.NAME = NULL
+      temp$AGE.SEX = NULL
+      temp$COUNTRY = NULL
+      temp$IBA.CODE = NULL
+      temp$SUBNATIONAL1_CODE = NULL
+      temp$SUBNATIONAL2_CODE = NULL
+      temp$ATLAS.BLOCK = NULL
+      temp$LOCALITY = NULL
+      temp$LOCALITY.ID = NULL
+      temp$LOCALITY.TYPE = NULL
+      temp$REVIEWED = NULL
+      temp$REASON = NULL
+      temp$TRIP.COMMENTS = NULL
+      temp$EFFORT.AREA.HA = NULL
+      temp$EFFORT.DISTANCE.KM = NULL
+      temp$SPECIES.COMMENTS = NULL
+      temp$X = NULL
+      temp$APPROVED = NULL
+      temp$TIME.OBSERVATIONS.STARTED = NULL
+      temp$DURATION.MINUTES = NULL
+      temp$NUMBER.OBSERVERS = NULL
+      temp$ALL.SPECIES.REPORTED = NULL
+      temp$GROUP.IDENTIFIER = NULL
+      temp$TAXONOMIC.ORDER = NULL
+      temp$CATEGORY = NULL
+      
+      # Set date field and divide up by year, month, week for plotting
+      temp$Date = as.Date(temp$OBSERVATION.DATE, "%Y-%m-%d")
+      temp$Year = strtoi(format(temp$Date, "%Y"))
+      temp$Month = strtoi(format(temp$Date, "%m"))
+      temp$Day = strtoi(format(temp$Date, "%d"))
+      temp$Month = ifelse(format(temp$Date, "%m") == "09", 9, temp$Month)
+      # Remove years < 2005 and months 6,7,8
+      temp = subset(temp, temp$Year > 2005 & temp$Year <= 2016)
+      temp = subset(temp, temp$Month >= 9 | temp$Month <= 4)
+      
+      temp$Winter = ifelse(temp$Month <= 4, paste(temp$Year - 1,temp$Year, sep = "/"),paste(temp$Year, temp$Year + 1, sep = "/"))
+      temp$Week = as.numeric(format(temp$Date, "%U"))
+      #ebird$Month = ifelse(ebird$Month <= 5, substring(ebird$Month,2),ebird$Month)
+      temp = subset(temp, temp$Winter != "2005/2006" & temp$Winter != "2016/2017")
+      
+      # Reorder months
+      temp$Month = factor(temp$Month, levels=c(9, 10, 11, 12, 1, 2, 3, 4))
+      temp$Week = factor(temp$Week, levels=c(35:53,1:17))
+      #Set X as na
+      temp$OBSERVATION.COUNT = ifelse(temp$OBSERVATION.COUNT == "X", 1, temp$OBSERVATION.COUNT)
+      temp$OBSERVATION.COUNT = as.numeric(temp$OBSERVATION.COUNT)
+      temp$BCRNUMNAME = paste(temp$BCR.CODE, temp$BCRNAME, sep="_")
+    })
     temp
   })
   
