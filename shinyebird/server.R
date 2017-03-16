@@ -78,7 +78,7 @@ shinyServer(function(input, output) {
     
     # Reorder months
     temp$Month = factor(temp$Month, levels=c(9, 10, 11, 12, 1, 2, 3, 4))
-    temp$Week = factor(temp$Week, levels=c(35:53,0:17))
+    temp$Week = factor(temp$Week, levels=c(35:53,1:17))
     #Set X as na
     temp$OBSERVATION.COUNT = ifelse(temp$OBSERVATION.COUNT == "X", 1, temp$OBSERVATION.COUNT)
     temp$OBSERVATION.COUNT = as.numeric(temp$OBSERVATION.COUNT)
@@ -115,6 +115,7 @@ shinyServer(function(input, output) {
     ggplot(aggMean, aes(x=aggMean$Week, y=aggMean$smooth)) +
       stat_summary(aes(y = aggMean$smooth,group=1), fun.y=mean, colour="red", geom="line",group=1) + 
       labs(y="Mean Observation count", x="Week number from the first week in September until the last week in April") +
+      scale_x_discrete(labels=c("Sept", 36:43, "November", 45:53, "Jan", 2:17)) +
       ggtitle(paste("Figure 2. Smoothed Observation count mean by BCR plotted over wintering period for ", input$species, sep=""))
   })
   
