@@ -22,8 +22,10 @@ shinyServer(function(input, output) {
       ############################################################################
       # Read in ebird data
       tempin = read.delim(paste(workspace,inbird,sep="/"), sep="\t", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
+      incProgress(0.7, detail = "Finished pulling in eBird.  BCR")
       bcrData = read.csv(paste(workspace, bcr, sep="/"), header=TRUE)
       temp = merge(tempin, bcrData, by.x = "BCR.CODE", by.y = "BCR")
+      incProgress(0.8, detail = "Finished pulling in BCRs.  Formatting")
       # Drop extra columns and data
       temp = subset(temp, temp$COUNTRY_CODE == "US")
       temp = subset(temp, temp$APPROVED == "1")
@@ -71,7 +73,7 @@ shinyServer(function(input, output) {
       # Remove years < 2005 and months 6,7,8
       temp = subset(temp, temp$Year > 2005 & temp$Year <= 2016)
       temp = subset(temp, temp$Month >= 9 | temp$Month <= 4)
-      
+      incProgress(0.9, detail = "Finished pulling in BCRs.  Adding sprinkles")
       temp$Winter = ifelse(temp$Month <= 4, paste(temp$Year - 1,temp$Year, sep = "/"),paste(temp$Year, temp$Year + 1, sep = "/"))
       temp$Week = as.numeric(format(temp$Date, "%U"))
       #ebird$Month = ifelse(ebird$Month <= 5, substring(ebird$Month,2),ebird$Month)
