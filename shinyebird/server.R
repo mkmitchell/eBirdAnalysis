@@ -89,7 +89,6 @@ shinyServer(function(input, output) {
   output$selectedSpecies = renderUI({
     df = ebird()
     items = unique(df$BCRNUMNAME)
-    items = sort(items)
     selectInput("bcr", "BCR:", items)
     })
   
