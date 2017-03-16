@@ -125,7 +125,7 @@ shinyServer(function(input, output) {
     testsmooth = SMA(testsetup[, "x"], 3)
     test = dip.test(testsmooth)
     bcr_name = unique(testsetup$BCRNUMNAME)
-    paste("P-value:", test$p.value[[1]]," / BCR:", bcr_name, sep=" ")
+    paste("P-value:", test$statistic[[1]]," / BCR:", bcr_name, sep=" ")
   })
   
   output$statsTable = renderPlot({
