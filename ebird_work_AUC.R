@@ -10,8 +10,8 @@ library(TTR)
 # Variable designiation
 # Workspace directory
 workspace = "D:/ebird/data"
-# list("abdu", "agwt", "amwi", "bwte", "canv", "cite", "gadw", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
-birdlist = list("abdu", "agwt", "amwi", "bwte", "canv", "cite", "gadw", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
+# list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
+birdlist = list("buff", "coei", "kiei", "ltdu")
 for (sp in 1:length(birdlist)) {
   species = birdlist[[sp]]
   print(species)
