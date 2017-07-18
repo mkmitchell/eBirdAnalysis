@@ -11,8 +11,9 @@ library(TTR)
 # Workspace directory
 workspace = "D:/ebird/newdata"
 # list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
-birdlist = list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
-data <- read.csv(paste("D:/ebird/Fleming/", "correctedDailyharv19992014.csv", sep=""), na.strings = "")
+birdlist = list("coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
+harvestdata <- read.csv(paste("D:/ebird/Fleming/", "correctedDailyharv19992014.csv", sep=""), na.strings = "")
+sumharvestin <- aggregate(harvestdata$Harvest, by=list(harvestdata$lumpedAOU, harvestdata$ST, harvestdata$fips,harvestdata$Season), sum)  # sum extracted harvest by county
 for (sp in 1:length(birdlist)) {
   species = birdlist[[sp]]
   print(species)
@@ -23,6 +24,10 @@ for (sp in 1:length(birdlist)) {
   ebird <- read.csv(paste(workspace,inbird,sep="/"), sep=",", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
   popobj <- read.csv(paste(workspace,"PopObj2.csv",sep="/"), sep=",", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
   setwd(workspace)
+  #Setup harvest and bcr input
+  sumharvest = subset(sumharvestin, sumharvestin$Group.1 == capspecies)
+  names(sumharvest) <- c("spp","ST", "fips","season", "harvest")
+  harvestbcr = merge(sumharvest, popobj, by.x = "fips", by.y = "fips")
   
   # Reorder months
   ebird$Month = factor(ebird$Month, levels=c(9, 10, 11, 12, 1, 2, 3, 4))
@@ -107,23 +112,6 @@ for (sp in 1:length(birdlist)) {
       classification = '4d'
     }
     
-    ## Create classification based off of stepdowns
-    sumharvest <- aggregate(data$Harvest, by=list(data$lumpedAOU, data$ST, data$fips,data$Season), sum)  # sum extracted harvest by county
-    sumharvest = subset(sumharvest, sumharvest$Group.1 == capspecies)
-    names(sumharvest) <- c("spp","ST", "fips","season", "harvest")
-    if (nrow(sumharvest) > 0) {
-      harvestfall = sumharvest[sumharvest$season=="fall",]
-      harvestfall$fallharvest = harvestfall$harvest
-      harvestwinter = sumharvest[sumharvest$season=="winter",]
-      harvestwinter$winterharvest = harvestwinter$harvest
-      mergeharvest = merge(harvestfall, harvestwinter, by=c("spp", "fips"))
-      mergeharvest$HarvestCode = ifelse(mergeharvest$fallharvest > mergeharvest$winterharvest, "4b", "4d")
-      newsub$HarvestCode = mergeharvest[match(newsub$fips, mergeharvest$fips),11]
-      newsub$HarvestCode = ifelse(is.na(newsub$HarvestCode), 0, newsub$HarvestCode)  
-    } else {
-      newsub$HarvestCode = 0
-    }
-    
     newOutput = list(species, pval, list(ss$y), list(ss$ypct), i, classification)
     
     #Create new dataframe from the list of species curves by bcr
@@ -147,16 +135,34 @@ for (sp in 1:length(birdlist)) {
     
     #Merge current speices/BCR to aggregate DF
     if (nrow(spauc) > 0) {
-      aggItAll = aggregate(cbind(LTAPopTot, X80PopTot)~fips+species+state+countyname+BCR+CODE+eBirdClass+pval+HarvestCode, data=spauc, sum, na.rm=TRUE)
+      aggItAll = aggregate(cbind(LTAPopTot, X80PopTot)~fips+species+state+countyname+BCR+CODE+eBirdClass+pval, data=spauc, sum, na.rm=TRUE)
       outTotal = rbind(outTotal, aggItAll)
       outCurve = rbind(outCurve, data.frame(ss$y, ss$ypct, BCR = i))
     }
+  } #End BCR Loop
+  
+  #Classify as 4b or 4d
+  ## Create classification based off of stepdowns
+  harvestbcrsp = aggregate(harvestbcr$harvest, list(Species=harvestbcr$spp, BCR=harvestbcr$BCR, season=harvestbcr$season), sum)
+  if (nrow(harvestbcrsp) > 0) {
+    harvestfall = harvestbcrsp[harvestbcrsp$season=="fall",]
+    harvestfall$fallharvest = harvestfall$harvest
+    harvestwinter = harvestbcrsp[harvestbcrsp$season=="winter",]
+    harvestwinter$winterharvest = harvestwinter$harvest
+    mergeharvest = merge(harvestfall, harvestwinter, by="BCR")
+    mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
+    outTest = outTotal
+    outTest$HarvestCode = mergeharvest[match(outTest$BCR, mergeharvest$BCR),8]
+    outTest$HarvestCode = ifelse(is.na(outTest$HarvestCode), 0, outTest$HarvestCode)  
+  } else {
+    newsub$HarvestCode = 0
   }
-  outTest = outTotal[(outTotal$CODE == outTotal$eBirdClass),]
-  #outTest = outTest[!(outTest$pval >= 0.05 & outTest$CODE == "4b"),]
+  #outTest = outTotal[(outTotal$CODE == outTotal$eBirdClass),] # Use ebird classification
+  #outTest = outTest[!(outTest$pval >= 0.05 & outTest$CODE == "4b"),] # use dip test.. part of it
+  outTest = outTest[(outTest$CODE == outTest$HarvestCode),] # Use harvest data
   outTotal = outTest
   outTotal = subset(outTotal, (outTotal$LTAPopTot != 0) & (outTotal$X80PopTot != 0))
   outCurve$species = species
   write.csv(outCurve, file=paste(workspace, "/output/",species, "_Curve.csv", sep=""), row.names = F)
   write.csv(outTotal, file=paste(workspace, "/output/",species, "_Output.csv", sep=""), row.names = F)
-}
+} #End species loop
