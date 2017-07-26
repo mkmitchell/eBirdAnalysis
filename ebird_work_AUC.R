@@ -11,12 +11,14 @@ library(TTR)
 # Workspace directory
 workspace = "D:/ebird/newdata"
 # list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
-birdlist = list("coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
+birdlist = list("abdu", "agwt", "amwi", "buff", "canv", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
 harvestdata <- read.csv(paste("D:/ebird/Fleming/", "correctedDailyharv19992014.csv", sep=""), na.strings = "")
 sumharvestin <- aggregate(harvestdata$Harvest, by=list(harvestdata$lumpedAOU, harvestdata$ST, harvestdata$fips,harvestdata$Season), sum)  # sum extracted harvest by county
+CombineItAll = data.frame()
 for (sp in 1:length(birdlist)) {
   species = birdlist[[sp]]
   print(species)
+  capspecies = toupper(species)
   # Input ArcGIS Model csv file
   inbird = paste(species, ".csv", sep="")
   ############################################################################
@@ -81,7 +83,7 @@ for (sp in 1:length(birdlist)) {
     
     # Create ebird curve and subset county level stepdown data
     ss$ypct = ss$y/max(ss$y)*100
-    capspecies = toupper(species)
+    
     newsub = subset(popobj, popobj$species == capspecies)
     newsub = aggregate(cbind(LTAPopObj, X80percPopObj)~fips+species+state+countyname+BCR+CODE, data=newsub, sum, na.rm=TRUE)
     
@@ -162,7 +164,9 @@ for (sp in 1:length(birdlist)) {
   outTest = outTest[(outTest$CODE == outTest$HarvestCode),] # Use harvest data
   outTotal = outTest
   outTotal = subset(outTotal, (outTotal$LTAPopTot != 0) & (outTotal$X80PopTot != 0))
+  CombineItAll = rbind(CombineItAll, outTotal)
   outCurve$species = species
   write.csv(outCurve, file=paste(workspace, "/output/",species, "_Curve.csv", sep=""), row.names = F)
   write.csv(outTotal, file=paste(workspace, "/output/",species, "_Output.csv", sep=""), row.names = F)
 } #End species loop
+write.csv(CombineItAll, file=paste(workspace, "/output/All_species", "_Output.csv", sep=""), row.names = F)
