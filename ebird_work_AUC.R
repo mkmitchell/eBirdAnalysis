@@ -1,6 +1,5 @@
 library(ggplot2)
 library(scales)
-library(diptest)
 library(shiny)
 library(TTR)
 
@@ -78,54 +77,55 @@ for (sp in 1:length(birdlist)) {
     if (nrow(sub) < 4) {
       next
     }
+    #Classify as 4b or 4d
+    ## Create classification based off of stepdowns
+    harvestbcrsp = aggregate(harvestbcr$harvest, list(Species=harvestbcr$spp, BCR=harvestbcr$BCR, season=harvestbcr$season), sum)
+    harvestclass = ''
+    max = 0
+    if (nrow(harvestbcrsp) > 0) {
+      harvestfall = harvestbcrsp[harvestbcrsp$season=="fall",]
+      harvestfall$fallharvest = harvestfall$harvest
+      harvestwinter = harvestbcrsp[harvestbcrsp$season=="winter",]
+      harvestwinter$winterharvest = harvestwinter$harvest
+      mergeharvest = merge(harvestfall, harvestwinter, by="BCR")
+      mergeharvest = subset(mergeharvest, mergeharvest$BCR == i)
+      if (nrow(mergeharvest) > 0){
+        mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
+        if (mergeharvest$x.x > mergeharvest$x.y){
+          harvestclass = "4b"
+          seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("9/1", format="%m/%d") & (as.Date(sub$Week, format="%m/%d")) <= as.Date("11/30", format="%m/%d")))
+          seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
+          max = max(seasonspline$y)
+        } else{
+          harvestclass = "4d"
+          seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("12/1", format="%m/%d") | (as.Date(sub$Week, format="%m/%d")) <= as.Date("3/30", format="%m/%d")))
+          seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
+          max = max(seasonspline$y)
+        }
+      } else {
+        next
+      }
+    } else {
+      next
+    }
     ss =smooth.spline(x=sub$Week, y=sub$x, spar=0.7, keep.data = TRUE)
     ss$x = aggMean$Week
     
     # Create ebird curve and subset county level stepdown data
-    ss$ypct = ss$y/max(ss$y)*100
+    ss$ypct = ss$y/max*100
     
     newsub = subset(popobj, popobj$species == capspecies)
     newsub = aggregate(cbind(LTAPopObj, X80percPopObj)~fips+species+state+countyname+BCR+CODE, data=newsub, sum, na.rm=TRUE)
     
-    # Run dip test
-    dt = dip.test(ss$yin)
-    pval =  dt$p.value[[1]]
-    
-    # TEST AUC Comparison for b/d classification
-    autumn = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("9/1", format="%m/%d") & (as.Date(sub$Week, format="%m/%d")) <= as.Date("11/30", format="%m/%d")))
-    if (nrow(autumn) < 1) {
-      autumn = 0
-    } else{
-      autumn = aggregate(autumn$x, list(BCR=autumn$BCR), sum)
-      autumn = autumn$x[1]
-    }
-    winter = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("12/1", format="%m/%d") | (as.Date(sub$Week, format="%m/%d")) <= as.Date("1/31", format="%m/%d")))
-    if (nrow(winter) < 1) {
-      winter = 0
-    } else {
-      winter = aggregate(winter$x, list(BCR=winter$BCR), sum)
-      winter = winter$x[1]
-    }
-    
-    classification = ''
-    if (autumn > winter) {
-      classification = '4b'
-    } else {
-      classification = '4d'
-    }
-    
-    newOutput = list(species, pval, list(ss$y), list(ss$ypct), i, classification)
+    newOutput = list(species, list(ss$y), list(ss$ypct), i)
     
     #Create new dataframe from the list of species curves by bcr
     noDF = data.frame(newOutput)
     #test = data.frame(species, ifelse(dt$p.value[[1]]<0.05, "4b", "4d"), ss$y, ss$ypct)
     names(noDF)[1] = "species"
-    names(noDF)[2] = "pval"
-    #names(noDF)[3] = "ssX"
-    names(noDF)[3] = "ssY"
-    names(noDF)[4] = "poppct"
-    names(noDF)[5] = "BCR"
-    names(noDF)[6] = "eBirdClass"
+    names(noDF)[2] = "ssY"
+    names(noDF)[3] = "poppct"
+    names(noDF)[4] = "BCR"
     noDF$species = toupper(noDF$species)
     # noDF$unique = paste(noDF$species, noDF$CODE, noDF$BCR)
     # newsub$unique = paste(newsub$species, newsub$CODE, newsub$BCR)
@@ -137,7 +137,7 @@ for (sp in 1:length(birdlist)) {
     
     #Merge current speices/BCR to aggregate DF
     if (nrow(spauc) > 0) {
-      aggItAll = aggregate(cbind(LTAPopTot, X80PopTot)~fips+species+state+countyname+BCR+CODE+eBirdClass+pval, data=spauc, sum, na.rm=TRUE)
+      aggItAll = aggregate(cbind(LTAPopTot, X80PopTot)~fips+species+state+countyname+BCR+CODE, data=spauc, sum, na.rm=TRUE)
       outTotal = rbind(outTotal, aggItAll)
       outCurve = rbind(outCurve, data.frame(ss$y, ss$ypct, BCR = i))
     }
@@ -145,22 +145,11 @@ for (sp in 1:length(birdlist)) {
   
   #Classify as 4b or 4d
   ## Create classification based off of stepdowns
-  harvestbcrsp = aggregate(harvestbcr$harvest, list(Species=harvestbcr$spp, BCR=harvestbcr$BCR, season=harvestbcr$season), sum)
-  if (nrow(harvestbcrsp) > 0) {
-    harvestfall = harvestbcrsp[harvestbcrsp$season=="fall",]
-    harvestfall$fallharvest = harvestfall$harvest
-    harvestwinter = harvestbcrsp[harvestbcrsp$season=="winter",]
-    harvestwinter$winterharvest = harvestwinter$harvest
-    mergeharvest = merge(harvestfall, harvestwinter, by="BCR")
-    mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
-    outTest = outTotal
-    outTest$HarvestCode = mergeharvest[match(outTest$BCR, mergeharvest$BCR),8]
-    outTest$HarvestCode = ifelse(is.na(outTest$HarvestCode), 0, outTest$HarvestCode)  
-  } else {
-    newsub$HarvestCode = 0
-  }
-  #outTest = outTotal[(outTotal$CODE == outTotal$eBirdClass),] # Use ebird classification
-  #outTest = outTest[!(outTest$pval >= 0.05 & outTest$CODE == "4b"),] # use dip test.. part of it
+  mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
+  outTest = outTotal
+  outTest$HarvestCode = mergeharvest[match(outTest$BCR, mergeharvest$BCR),8]
+  outTest$HarvestCode = ifelse(is.na(outTest$HarvestCode), 0, outTest$HarvestCode)  
+
   outTest = outTest[(outTest$CODE == outTest$HarvestCode),] # Use harvest data
   outTotal = outTest
   outTotal = subset(outTotal, (outTotal$LTAPopTot != 0) & (outTotal$X80PopTot != 0))
