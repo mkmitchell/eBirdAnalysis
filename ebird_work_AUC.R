@@ -72,11 +72,13 @@ for (sp in 1:length(birdlist)) {
   # Mean of ebird data by Week
   aggMean = aggregate(ebird$OBSERVATION.COUNT, list(Week=ebird$MonthDay, BCR=ebird$BCR.CODE, BCRName = ebird$BCRNAME, BCRNUMNAME = ebird$BCRNUMNAME), mean)
   # Iterate through ebird data by BCR
+  print(unique(aggMean$BCR))
   for(i in unique(aggMean$BCR)) {
     sub = subset(aggMean, aggMean$BCR == i)
     if (nrow(sub) < 4) {
       next
     }
+    print(i)
     #Classify as 4b or 4d
     ## Create classification based off of stepdowns
     harvestbcrsp = aggregate(harvestbcr$harvest, list(Species=harvestbcr$spp, BCR=harvestbcr$BCR, season=harvestbcr$season), sum)
@@ -88,19 +90,19 @@ for (sp in 1:length(birdlist)) {
       harvestwinter = harvestbcrsp[harvestbcrsp$season=="winter",]
       harvestwinter$winterharvest = harvestwinter$harvest
       mergeharvest = merge(harvestfall, harvestwinter, by="BCR")
-      mergeharvest = subset(mergeharvest, mergeharvest$BCR == i)
-      if (nrow(mergeharvest) > 0){
-        mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
-        if (mergeharvest$x.x > mergeharvest$x.y){
+      mergesubharvest = subset(mergeharvest, mergeharvest$BCR == i)
+      if (nrow(mergesubharvest) > 0){
+        mergesubharvest$HarvestCode = ifelse(mergesubharvest$x.x > mergesubharvest$x.y, "4b", "4d")
+        if (mergesubharvest$x.x > mergesubharvest$x.y){
           harvestclass = "4b"
           seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("9/1", format="%m/%d") & (as.Date(sub$Week, format="%m/%d")) <= as.Date("11/30", format="%m/%d")))
-          seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
-          max = max(seasonspline$y)
+          #seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
+          max = max(seasonsub$x)
         } else{
           harvestclass = "4d"
           seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("12/1", format="%m/%d") | (as.Date(sub$Week, format="%m/%d")) <= as.Date("3/30", format="%m/%d")))
-          seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
-          max = max(seasonspline$y)
+          #seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
+          max = max(seasonsub$x)
         }
       } else {
         next
@@ -142,7 +144,7 @@ for (sp in 1:length(birdlist)) {
       outCurve = rbind(outCurve, data.frame(ss$y, ss$ypct, BCR = i))
     }
   } #End BCR Loop
-  
+
   #Classify as 4b or 4d
   ## Create classification based off of stepdowns
   mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
