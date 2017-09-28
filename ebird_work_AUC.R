@@ -10,7 +10,7 @@ library(TTR)
 # Workspace directory
 workspace = "D:/ebird/newdata"
 # list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
-birdlist = list("abdu", "agwt", "amwi", "buff", "canv", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
+birdlist = list("bwte")
 harvestdata <- read.csv(paste("D:/ebird/Fleming/", "correctedDailyharv19992014.csv", sep=""), na.strings = "")
 sumharvestin <- aggregate(harvestdata$Harvest, by=list(harvestdata$lumpedAOU, harvestdata$ST, harvestdata$fips,harvestdata$Season), sum)  # sum extracted harvest by county
 CombineItAll = data.frame()
@@ -19,7 +19,11 @@ for (sp in 1:length(birdlist)) {
   print(species)
   capspecies = toupper(species)
   # Input ArcGIS Model csv file
-  inbird = paste(species, ".csv", sep="")
+  if (species == 'bwte' | species == 'cite'){
+    inbird = paste('bcte', ".csv", sep="")
+  } else {
+    inbird = paste(species, ".csv", sep="")
+  }
   ############################################################################
   # Read in ebird data (16 species)
   ebird <- read.csv(paste(workspace,inbird,sep="/"), sep=",", header=TRUE, quote = "", stringsAsFactors = FALSE, na.strings=c(""))
@@ -81,41 +85,44 @@ for (sp in 1:length(birdlist)) {
     print(i)
     #Classify as 4b or 4d
     ## Create classification based off of stepdowns
-    harvestbcrsp = aggregate(harvestbcr$harvest, list(Species=harvestbcr$spp, BCR=harvestbcr$BCR, season=harvestbcr$season), sum)
-    harvestclass = ''
     max = 0
-    if (nrow(harvestbcrsp) > 0) {
-      harvestfall = harvestbcrsp[harvestbcrsp$season=="fall",]
-      harvestfall$fallharvest = harvestfall$harvest
-      harvestwinter = harvestbcrsp[harvestbcrsp$season=="winter",]
-      harvestwinter$winterharvest = harvestwinter$harvest
-      mergeharvest = merge(harvestfall, harvestwinter, by="BCR")
-      mergesubharvest = subset(mergeharvest, mergeharvest$BCR == i)
-      if (nrow(mergesubharvest) > 0){
-        mergesubharvest$HarvestCode = ifelse(mergesubharvest$x.x > mergesubharvest$x.y, "4b", "4d")
-        if (mergesubharvest$x.x > mergesubharvest$x.y){
-          harvestclass = "4b"
-          seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("9/1", format="%m/%d") & (as.Date(sub$Week, format="%m/%d")) <= as.Date("11/30", format="%m/%d")))
-          #seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
-          max = max(seasonsub$x)
-        } else{
-          harvestclass = "4d"
-          seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("12/1", format="%m/%d") | (as.Date(sub$Week, format="%m/%d")) <= as.Date("3/30", format="%m/%d")))
-          #seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
-          max = max(seasonsub$x)
+    if (species == 'bwte' | species == 'cite'){
+      harvestclass = "4b"
+    } else {
+      harvestbcrsp = aggregate(harvestbcr$harvest, list(Species=harvestbcr$spp, BCR=harvestbcr$BCR, season=harvestbcr$season), sum)
+      harvestclass = ''
+      if (nrow(harvestbcrsp) > 0) {
+        harvestfall = harvestbcrsp[harvestbcrsp$season=="fall",]
+        harvestfall$fallharvest = harvestfall$harvest
+        harvestwinter = harvestbcrsp[harvestbcrsp$season=="winter",]
+        harvestwinter$winterharvest = harvestwinter$harvest
+        mergeharvest = merge(harvestfall, harvestwinter, by="BCR")
+        mergesubharvest = subset(mergeharvest, mergeharvest$BCR == i)
+        if (nrow(mergesubharvest) > 0){
+          mergesubharvest$HarvestCode = ifelse(mergesubharvest$x.x > mergesubharvest$x.y, "4b", "4d")
+          if (mergesubharvest$x.x > mergesubharvest$x.y){
+            harvestclass = "4b"
+            seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("9/1", format="%m/%d") & (as.Date(sub$Week, format="%m/%d")) <= as.Date("11/30", format="%m/%d")))
+            #seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
+            max = max(seasonsub$x)
+          } else{
+            harvestclass = "4d"
+            seasonsub = subset(sub, (as.Date(sub$Week, format="%m/%d") >= as.Date("12/1", format="%m/%d") | (as.Date(sub$Week, format="%m/%d")) <= as.Date("3/30", format="%m/%d")))
+            #seasonspline = smooth.spline(x=seasonsub$Week, y=seasonsub$x, spar=0.7, keep.data = TRUE)
+            max = max(seasonsub$x)
+          }
+        } else {
+          next
         }
       } else {
         next
       }
-    } else {
-      next
     }
     ss =smooth.spline(x=sub$Week, y=sub$x, spar=0.7, keep.data = TRUE)
     ss$x = aggMean$Week
     
     # Create ebird curve and subset county level stepdown data
     ss$ypct = ss$y/max*100
-    
     newsub = subset(popobj, popobj$species == capspecies)
     newsub = aggregate(cbind(LTAPopObj, X80percPopObj)~fips+species+state+countyname+BCR+CODE, data=newsub, sum, na.rm=TRUE)
     
@@ -137,7 +144,7 @@ for (sp in 1:length(birdlist)) {
     spauc$LTAPopTot = spauc$poppct * .01 * spauc$LTAPopObj
     spauc$X80PopTot = spauc$poppct * .01 * spauc$X80percPopObj
     
-    #Merge current speices/BCR to aggregate DF
+    #Merge current species/BCR to aggregate DF
     if (nrow(spauc) > 0) {
       aggItAll = aggregate(cbind(LTAPopTot, X80PopTot)~fips+species+state+countyname+BCR+CODE, data=spauc, sum, na.rm=TRUE)
       outTotal = rbind(outTotal, aggItAll)
@@ -147,17 +154,20 @@ for (sp in 1:length(birdlist)) {
 
   #Classify as 4b or 4d
   ## Create classification based off of stepdowns
-  mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
   outTest = outTotal
-  outTest$HarvestCode = mergeharvest[match(outTest$BCR, mergeharvest$BCR),8]
-  outTest$HarvestCode = ifelse(is.na(outTest$HarvestCode), 0, outTest$HarvestCode)  
-
+  if (species == 'bwte' | species == 'cite'){
+    outTest$HarvestCode = "4b"
+  } else {
+    mergeharvest$HarvestCode = ifelse(mergeharvest$x.x > mergeharvest$x.y, "4b", "4d")
+    outTest$HarvestCode = mergeharvest[match(outTest$BCR, mergeharvest$BCR),8]
+    outTest$HarvestCode = ifelse(is.na(outTest$HarvestCode), 0, outTest$HarvestCode)  
+  }
   outTest = outTest[(outTest$CODE == outTest$HarvestCode),] # Use harvest data
   outTotal = outTest
   outTotal = subset(outTotal, (outTotal$LTAPopTot != 0) & (outTotal$X80PopTot != 0))
   CombineItAll = rbind(CombineItAll, outTotal)
   outCurve$species = species
-  write.csv(outCurve, file=paste(workspace, "/output/",species, "_Curve.csv", sep=""), row.names = F)
-  write.csv(outTotal, file=paste(workspace, "/output/",species, "_Output.csv", sep=""), row.names = F)
+  #write.csv(outCurve, file=paste(workspace, "/output/",species, "_Curve.csv", sep=""), row.names = F)
+  #write.csv(outTotal, file=paste(workspace, "/output/",species, "_Output.csv", sep=""), row.names = F)
 } #End species loop
-write.csv(CombineItAll, file=paste(workspace, "/output/All_species", "_Output.csv", sep=""), row.names = F)
+#write.csv(CombineItAll, file=paste(workspace, "/output/All_species", "_Output.csv", sep=""), row.names = F)
