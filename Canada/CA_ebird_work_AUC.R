@@ -11,16 +11,17 @@ library(TTR)
 workspace = "D:/ebird/Canada/CAFleming"
 # list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
 birdlist = list("abdu", "agwt", "amwi", "buff", "bwte", "canv", "cite", "coei", "gadw", "kiei", "ltdu", "mall", "nopi", "nsho", "redh", "rndu", "rudu", "scau", "wodu")
-#birdlist = list("cite", "bwte")
+# Fleming et al. R code input data.  I'm not sure the source of this file.  Canada data was added to the original file format schema.
 harvestdata <- read.csv(paste("D:/ebird/Canada/CAFleming/", "correctedDailyharv19992014.csv", sep=""), na.strings = "")
 sumharvestin <- aggregate(harvestdata$Harvest, by=list(harvestdata$lumpedAOU, harvestdata$fips,harvestdata$Season), sum)  # sum extracted harvest by county
-
 CombineItAll = data.frame()
+
+#loop that does work for each bird in the bird list specified above.  All Species.csv files were derived from Fleming et al. R code output.
 for (sp in 1:length(birdlist)) {
   species = birdlist[[sp]]
   print(species)
   capspecies = toupper(species)
-  # Input ArcGIS Model csv file
+  # Input ArcGIS Model csv file.  BWTE and CITE are both treated as BCTE.  Work is done slightly differently for these two.
   if (species == 'bwte' | species == 'cite'){
     inbird = paste('bcte', ".csv", sep="")
   } else {
