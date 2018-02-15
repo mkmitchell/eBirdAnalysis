@@ -5,15 +5,16 @@ library(scales)
 ############################################################################
 # Variable designiation
 # Workspace directory
-workspace = "D:/ebird"
+workspace = "D:/ebird/datadownload"
 # Input ArcGIS Model csv file
-birdlist = list("buffle", "comeid", "kineid", "lotduc", "US_agwtea1", "US_ambduc", "US_amewig", "US_buwtea", "US_canvas", "US_cintea", "US_gadwal", "US_gresca", "US_lessca", "US_mallar", "US_norpin", "US_norsho", "US_redhea", "US_rinduc", "US_rudduc", "US_wooduc")
+birdlist = list( "agwtea1",  "ambduc", "amewig", "bargol", "blksco2", "buwtea", "buffle", "canvas", "cintea", "comeid", "comgol", "commer", "kineid", "gadwal", "gresca", "harduc", "hoomer", "lessca", "lotduc", "mallar", "norpin", "norsho", "rebmer", "redhea", "rinduc", "rudduc", "sursco", "whwsco", "wooduc")
 for (sp in 1:length(birdlist)) {
-  if (any(c("buffle", "comeid", "kineid", "lotduc") == birdlist[[sp]])){
-    inbird = paste("ebd_",birdlist[[sp]], "_relMay-2017.txt", sep="")
-  } else {
-    inbird = paste("ebd_",birdlist[[sp]], "_relNov-2016.txt", sep="")
-  }
+#  if (any(c("buffle", "comeid", "kineid", "lotduc") == birdlist[[sp]])){
+#    inbird = paste("ebd_",birdlist[[sp]], "_relMay-2017.txt", sep="")
+#  } else {
+#    inbird = paste("ebd_",birdlist[[sp]], "_relNov-2016.txt", sep="")
+#  }
+  inbird = paste("ebd_",birdlist[[sp]], "_relAug-2017.txt", sep="")
   bcr = "BCR.csv"
   ############################################################################
   # Read in ebird data (16 species)
@@ -24,7 +25,7 @@ for (sp in 1:length(birdlist)) {
   setwd(workspace)
   
   # Drop extra columns and data
-  ebird = subset(ebird, ebird$COUNTRY_CODE == "US")
+  #ebird = subset(ebird, ebird$COUNTRY_CODE == "US")
   ebird = subset(ebird, ebird$APPROVED == "1")
   ebird$PROJECT.CODE = NULL
   ebird$PROTOCOL.TYPE = NULL
