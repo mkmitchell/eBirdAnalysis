@@ -22,12 +22,12 @@
   library(reshape)
   
   ## specify path to access data tables and store results as well as the data input file names that reside in the path
-  path <- "D:/ebird/Mexico/Analysis/"
+  path <- "D:/ebird/Mexico/Analysis/2_19/"
   
   jvabbvinput <- "JVabbrev.csv"
   
   # Mexico data input
-  mxharvestinput = "MX_harvest.csv"
+  mxharvestinput = "Mexico_counts.csv"
   mxmwinput = "Mexico_objectives.csv"
   mxJVcountyinput = "MX_jvcounty.csv"
   
@@ -80,13 +80,16 @@
   ### Calculate proportion of LTA and 80 percentile in each county: 
   
   contobj <- read.csv(paste(path, mxmwinput, sep="")) # winter LTA and 80 perc LTA objectives by spp, corrected for Mx MWI
+  contobj$spp = toupper(contobj$spp)
   alldata <- merge(propharvest,contobj, by="spp")
-  LTApopobj <- alldata$propharv*alldata$MW_LTA   # multiply each county prop of total harv by winter LTA obj
-  perc80popobj <- alldata$propharv*alldata$MW_80 # multiply each county prop of total harv by 80 perc LTA obj
+  LTApopobj <- alldata$propharv*alldata$LTA   # multiply each county prop of total harv by winter LTA obj
+  perc80popobj <- alldata$propharv*alldata$X80p # multiply each county prop of total harv by 80 perc LTA obj
   popobj <- cbind(alldata, LTApopobj,perc80popobj)
   
   popobjtot <- aggregate(popobj[,8:9], by=list(popobj$spp),sum)  # should total to winter objectives by species and year
-  #popobjstate <- aggregate(popobj[,9:10], by=list(popobj$ST,popobj$spp, popobj$Year), sum)  # total state winter objectives by species and year
+  #Sanity check
+  aggregate(popobj[,8:9], by=list(popobj$spp),sum)  # should total to winter objectives by species and year
+  #popobjstate <- aggregate(popobj[,8:9], by=list(popobj$spp), sum)  # total state winter objectives by species and year
   
   ###  Calculate population objectives by JV
   
@@ -95,9 +98,9 @@
   propLTApopobj <- popobjJV$propsqkm*popobjJV$LTApopobj
   propperc80popobj <- popobjJV$propsqkm*popobjJV$perc80popobj
   popobjJVtots <- cbind(popobjJV,propLTApopobj, propperc80popobj)
-  #aggregate(popobjJVtots$propsqkm, by=list(popobjJVtots$spp, popobjJVtots$fips), sum)
-  popmax = length(popobjJVtots)
-  popmaxm1 = popmax-1
+  #sanity check
+  aggregate(popobjJVtots$propsqkm, by=list(popobjJVtots$spp, popobjJVtots$fips), sum) #should all add to 1
+  aggregate(popobjJVtots$propLTApopobj, by=list(popobjJVtots$spp), sum)
   
   ## Create tables containing JV pop objectives
   

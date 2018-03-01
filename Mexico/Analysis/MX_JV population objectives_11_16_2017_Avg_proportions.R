@@ -22,7 +22,7 @@
   library(reshape)
   
   ## specify path to access data tables and store results as well as the data input file names that reside in the path
-  path <- "D:/ebird/Mexico/Analysis/"
+  path <- "D:/ebird/Mexico/Analysis/2_19/"
   
   jvabbvinput <- "JVabbrev.csv"
   
